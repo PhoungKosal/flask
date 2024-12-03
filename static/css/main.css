@@ -1,0 +1,86 @@
+.product-modal {
+    max-width: 100%;
+}
+
+.img-input-placeholder {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+    position: absolute
+}
+
+.input-file-hidden {
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.input-file-hidden ~ span {
+    display: none;
+    position: absolute;
+    text-align: center;
+    color: white;
+    width: 100%;
+    bottom: 0;
+    z-index: 1;
+    background-color: rgba(0, 0, 0, 0.5);
+    transform: translateY(100%); /* Start off-screen */
+    transition: transform 0.3s ease-in-out; /* Smooth transition */
+    opacity: 0;
+}
+
+.input-file-hidden:hover ~ span {
+    display: block;
+    animation: slideInFromBottom 0.3s forwards; /* Apply the slide-in animation */
+}
+
+@keyframes slideInFromBottom {
+    from {
+        transform: translateY(100%); /* Start off the screen */
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0); /* End at the original position */
+        opacity: 1;
+    }
+}
+
+.remove-image {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    top: 0;
+    right: 0;
+    font-size: 25px;
+    color: rgba(0,0,0,.3);
+    padding: 0;
+    height: 30px;
+    width: 30px;
+    transform: translate(45%, -45%);
+    border: none;
+    border-radius: 50%;
+}
+
+/*.form-group i {*/
+/*    color: rgba(0,0,0,.5);*/
+/*}*/
+
+@media (min-width: 768px) {
+    .product-modal {
+        max-width: 70%;
+    }
+}
+
+@media (min-width: 992px) {
+  .product-modal {
+    max-width: 70%;
+  }
+}
+
+@media (min-width: 1200px) {
+    .product-modal {
+        max-width: 50%;
+    }
+}

@@ -1,0 +1,391 @@
+{% extends 'master.html' %}
+{% block content %}
+    <div id="app">
+        <!-- Content Header (Page header) -->
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0">User Page</h1>
+                    </div><!-- /.col -->
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="#">Home</a></li>
+                            <li class="breadcrumb-item active">User Page</li>
+                        </ol>
+                    </div><!-- /.col -->
+                </div><!-- /.row -->
+            </div><!-- /.container-fluid -->
+        </div>
+        <!-- /.content-header -->
+
+        <!-- Modal -->
+        <div
+                class="modal fade"
+                id="popup_modal" data-backdrop="static"
+                data-keyboard="false" tabindex="-1"
+                aria-labelledby="staticBackdropLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="staticBackdropLabel">Modal title</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body p-5">
+                        <form>
+                            <div class="position-relative" style="width: 150px; height: 150px;">
+                                <div class="card w-100 h-100 overflow-hidden">
+                                    <img src="/static/no-image.png" class="img-input-placeholder">
+                                    <input @change="handleImage"
+                                           ref="imageInput"
+                                           type="file"
+                                           class="input-file-hidden"
+                                           accept="image/*"
+                                           title=""
+                                    >
+                                    <span> Browse... </span>
+                                    <div v-if="form.image" class="position-relative w-100 h-100">
+                                        <img
+                                                :src="form.image.startsWith('data:image/') ? form.image : '/static/uploaded_images/user/' + form.image"
+                                                alt="User Image"
+                                                style="object-fit: cover; width: 100%; height: 100%"
+                                        >
+                                    </div>
+                                </div>
+                                <button
+                                        v-if="form.image"
+                                        @click="clearImage"
+                                        type="button"
+                                        class="remove-image"
+                                >
+                                    <i class="fas fa-times-circle"></i>
+                                </button>
+                            </div>
+                            <hr>
+                            <div class="form-row">
+                                <div class="form-group col-12">
+                                    <label for="name">Name</label>
+                                    <input
+                                            type="text"
+                                            class="form-control"
+                                            id="name"
+                                            name="name"
+                                            required
+                                            v-model="form.name"
+                                    >
+                                </div>
+                                <div class="form-group col-12">
+                                    <label for="gender">Gender</label>
+                                    <select
+                                            id="gender"
+                                            name="gender"
+                                            class="form-control"
+                                            v-model="form.gender"
+                                    >
+                                        <option :value="null" disabled>Select gender</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-12">
+                                    <label for="phone">Phone</label>
+                                    <input
+                                            type="text"
+                                            class="form-control"
+                                            id="phone"
+                                            name="phone"
+                                            v-model="form.phone"
+
+                                    >
+                                </div>
+                                <div class="form-group col-12">
+                                    <label for="email">Email</label>
+                                    <input
+                                            type="email"
+                                            class="form-control"
+                                            id="email"
+                                            name="email"
+                                            v-model="form.email"
+
+                                    >
+                                </div>
+                                <div class="form-group col-12">
+                                    <label for="address">Address</label>
+                                    <input
+                                            type="text"
+                                            class="form-control"
+                                            id="address"
+                                            name="address"
+                                            v-model="form.address"
+
+                                    >
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button
+                                type="button"
+                                class="float-left btn btn-outline-danger"
+                                data-dismiss="modal"
+                        >Close
+                        </button>
+                        <button
+                                v-if="status == 'add'"
+                                @click="saveRecord()"
+                                type="button"
+                                class="btn btn-primary"
+                        >Save
+                        </button>
+                        <button
+                                v-if="status == 'update'"
+                                @click="updateRecord()"
+                                type="button"
+                                class="btn btn-primary"
+                        >Update
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Main content -->
+        <div class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <button
+                                        @click="addRecord"
+                                        class="btn btn-outline-primary"
+                                >
+                                    <i class="fas fa-plus-circle"></i>
+                                    Add
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table
+                                            class="table table-borderless table-striped"
+                                    >
+                                        <thead>
+                                        <tr class="bg-primary">
+                                            <th>No.</th>
+                                            <th>Image</th>
+                                            <th>Name</th>
+                                            <th>Gender</th>
+                                            <th>Phone</th>
+                                            <th>Email</th>
+                                            <th>Address</th>
+                                            <th>Action</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr
+                                                v-for="(item, index) in users"
+                                                :key="'user_'+index"
+                                        >
+                                            <td>[[ index + 1]]</td>
+                                            <td>
+                                                <img
+                                                        onerror="this.src='/static/image_error.png';"
+                                                        :src="'/static/uploaded_images/user/'+item.image"
+                                                        style="width: 50px; height: 50px; object-fit: cover"
+                                                >
+                                            </td>
+                                            <td>[[ item.name ]]</td>
+                                            <td class="text-capitalize">[[ item.gender ]]</td>
+                                            <td>[[ item.phone ]]</td>
+                                            <td>[[ item.email ]]</td>
+                                            <td>[[ item.address ]]</td>
+                                            <td>
+                                                <button
+                                                        @click="editRecord(item)"
+                                                        class="btn btn-sm btn-outline-secondary mr-2"
+                                                >
+                                                    <i class="fas fa-edit"></i>
+                                                    Edit
+                                                </button>
+                                                <button
+                                                        @click="deleteRecord(item.id)"
+                                                        class="btn btn-sm btn-outline-danger"
+                                                >
+                                                    <i class="fas fa-trash-restore"></i>
+                                                    Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block script %}
+    <script>
+        const {createApp} = Vue
+        createApp({
+            delimiters: ['[[', ']]'],
+            created() {
+                this.getUsers()
+            },
+            data() {
+                return {
+                    form: {
+                        'id': null,
+                        'name': null,
+                        'gender': null,
+                        'phone': null,
+                        'email': null,
+                        'address': null,
+                        'image': '',
+                    },
+                    users: [],
+                    status: 'add'
+                }
+            },
+            methods: {
+                saveRecord() {
+                    let vm = this
+                    $.LoadingOverlay("show");
+                    let api_url = 'http://127.0.0.1:5000/user/save'
+                    axios.post(api_url, vm.form)
+                        .then(function (response) {
+                            console.log(response)
+                            $.LoadingOverlay("hide");
+                            vm.clearForm()
+                            vm.getUsers()
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                            $.LoadingOverlay("hide");
+                        })
+                },
+                updateRecord() {
+                    let vm = this
+                    $.LoadingOverlay("show");
+                    let api_url = 'http://127.0.0.1:5000/user/update'
+                    axios.post(api_url, vm.form)
+                        .then(function (response) {
+                            console.log(response)
+                            $.LoadingOverlay("hide");
+                            vm.clearForm()
+                            vm.getUsers()
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        })
+                },
+                addRecord() {
+                    this.clearForm()
+                    this.status = 'add'
+                    $('#popup_modal').modal('show')
+                },
+                deleteRecord(id) {
+                    let vm = this
+                    Swal.fire({
+                        title: "Do you want to save the changes?",
+                        showDenyButton: false,
+                        showCancelButton: true,
+                        confirmButtonText: "Yes Delete !",
+                        denyButtonText: `Don't save`
+                    })
+                        .then((result) => {
+                            if (result.isConfirmed) {
+                                this.users.splice(id, 1);
+                                $.LoadingOverlay("show");
+                                let api_url = 'http://127.0.0.1:5000/user/delete'
+                                axios.post(api_url, {id: id})
+                                    .then(function (response) {
+                                        $.LoadingOverlay("hide");
+                                        vm.getUsers()
+                                    })
+                                    .catch(function (error) {
+                                        console.log(error);
+                                        $.LoadingOverlay("hide");
+                                    })
+
+
+                                Swal.fire({
+                                    position: "top-end",
+                                    icon: "success",
+                                    title: "Delete Successfully",
+                                    showConfirmButton: false,
+                                    timer: 1500
+                                });
+                            }
+                        });
+
+                },
+                editRecord(item) {
+                    this.clearForm()
+                    this.form.id = item.id
+                    this.form.name = item.name
+                    this.form.gender = item.gender
+                    this.form.phone = item.phone
+                    this.form.email = item.email
+                    this.form.address = item.address
+                    this.form.image = item.image
+                    this.status = 'update'
+                    $('#popup_modal').modal('show')
+                },
+                getUsers() {
+                    let vm = this
+                    $.LoadingOverlay("show");
+                    let api_url = 'http://127.0.0.1:5000/user/list'
+                    axios.get(api_url)
+                        .then(function (response) {
+                            vm.users = response.data
+                            $.LoadingOverlay("hide");
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        })
+                },
+                clearForm() {
+                    this.form.id = null
+                    this.form.name = null
+                    this.form.cost = null
+                    this.form.price = null
+                    this.form.category_id = null
+                    this.form.unit_id = null
+                    this.form.brand_id = null
+                    this.form.tag_id = null
+                    this.form.image = null
+                    this.$refs.imageInput.value = ''
+                    $('#popup_modal').modal('hide')
+                },
+                handleImage(e) {
+                    if (e.target.files.length > 0) {
+                        const selectedImage = e.target.files[0]; // get first file
+                        this.createBase64Image(selectedImage);
+                    }
+                    ;
+                },
+                createBase64Image(fileObject) {
+                    const reader = new FileReader();
+
+                    reader.onload = (e) => {
+                        this.form.image = e.target.result;
+                    };
+                    reader.readAsDataURL(fileObject);
+                },
+                clearImage(e) {
+                    this.$refs.imageInput.value = '';
+                    this.form.image = null;
+                }
+            }
+        }).mount('#app')
+    </script>
+{% endblock %}

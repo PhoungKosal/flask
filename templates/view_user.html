@@ -1,0 +1,50 @@
+{% extends 'master.html' %}
+{% block content %}
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">User Detail Page</h1>
+                </div><!-- /.col -->
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="#">Home</a></li>
+                        <li class="breadcrumb-item active">User Page</li>
+                    </ol>
+                </div><!-- /.col -->
+            </div><!-- /.row -->
+        </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+
+    <!-- Main content -->
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <a href="{{ url_for('user') }}">
+                                <button class="btn btn-outline-secondary">
+                                    <i class="far fa-arrow-alt-circle-left"></i>
+                                    Back
+                                </button>
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            <ul>
+                                <li>Name: {{ data['name'] }}</li>
+                                <li>Gender: {{ data['gender'] }}</li>
+                                <li>Phone: {{ data['phone'] }}</li>
+                                <li>Email: {{ data['email'] }}</li>
+                                <li>Address: {{ data['address'] }}</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

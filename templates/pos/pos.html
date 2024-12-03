@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS System</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+<div id="app">
+    <div class="container-fluid py-4">
+        <div class="row">
+            <!-- Left Section: Categories and Products -->
+            <div class="col-md-6">
+                <!-- Category Buttons -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <button type="button" class="btn btn-outline-primary category-btn mr-2" @click="getAllProducts()">
+                            All Products
+                        </button>
+                        <button v-for="(item, index) in category_list"
+                                type="button"
+                                class="btn btn-outline-primary category-btn mr-2"
+                                @click="getProductsByCategoryId(item.id)">
+                            [[ item.name ]]
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Product Cards -->
+                <div v-if="product_list.length === 0" class="col-12 text-center">
+                    <h4>No products available</h4>
+                </div>
+                <div v-else class="row">
+                    <div v-for="(item, index) in product_list" class="col-lg-3 col-md-4 col-sm-6 col-12 mb-4">
+                        <div class="card shadow-sm border-light">
+                            <div class="image-container position-relative">
+                                <img :src="'/static/uploaded_images/product/'+item.image"
+                                     class="img-fluid rounded-top">
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">[[ item.name ]]</h5>
+                                <p class="card-text text-dark">$ [[ item.price ]]</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="fa fa-star-o text-warning"></i>
+                                        <span class="rating-number">4.8</span>
+                                    </div>
+                                    <button class="btn btn-success btn-sm" @click="addToCart(item)">
+                                        Add to Cart
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Section: Cart and Checkout -->
+            <div class="col-md-6">
+                <h4 class="text-center mb-3">Shopping Cart</h4>
+                <table class="table table-bordered table-hover">
+                    <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Quantity</th>
+                        <th>Price ($)</th>
+                        <th>Total ($)</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="(item, index) in cart" :key="index">
+                        <td>[[ item.name ]]</td>
+                        <td>[[ item.qty ]]</td> <!-- Display Quantity -->
+                        <td>[[ item.price.toLocaleString() ]]</td>
+                        <td>[[ (item.qty * item.price).toLocaleString() ]]</td> <!-- Display Total Amount -->
+                        <td>
+                            <button class="btn btn-sm btn-danger" @click="removeFromCart(index)">
+                                <i class="fas fa-trash"></i> Remove
+                            </button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+
+                <hr>
+
+                <div class="mt-3">
+                    <h5>Formatted Cart Information</h5>
+                    <p>[[ getCartFormatted() ]]</p>
+                </div>
+
+                <!-- Checkout Section -->
+                <div class="sticky-bottom mt-3">
+                    <div class="row">
+                        <div class="col-12">
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Total</strong></td>
+                                    <td class="text-right">[[ total.toLocaleString() ]]</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Received Amount</strong></td>
+                                    <td class="text-right"><input type="number" v-model.number="received_amount" class="form-control form-control-sm" /></td>
+                                </tr>
+                                <tr v-if="received_amount > total">
+                                    <td><strong>Change</strong></td>
+                                    <td class="text-right">[[ (received_amount - total).toLocaleString() ]]</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn btn-danger btn-block" @click="clearCart()">Cancel</button>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn btn-success btn-block" @click="processPayment()">Pay</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var vue_obj = new Vue({
+        el: '#app',
+        delimiters: ['[[', ']]'],
+        data: {
+            product_list: [],
+            category_list: [],
+            cart: [],
+            total: 0,
+            received_amount: 0
+        },
+        mounted() {
+            this.get_product_list();
+            this.get_category_list();
+        },
+        methods: {
+            get_product_list() {
+                axios.get('product/list')
+                    .then(response => {
+                        this.product_list = response.data;
+                    })
+                    .catch(error => {
+                        console.log(error);
+                    });
+            },
+            get_category_list() {
+                axios.get('category/list')
+                    .then(response => {
+                        this.category_list = response.data;
+                    })
+                    .catch(error => {
+                        console.log(error);
+                    });
+            },
+            getProductsByCategoryId(categoryId) {
+                axios.get(`product/category/${categoryId}`)
+                    .then(response => {
+                        this.product_list = response.data;
+                        console.log(response.data,'response.data');
+                    })
+                    .catch(error => {
+                        console.log(error);
+                    });
+            },
+            getAllProducts() {
+                axios.get('product/list')
+                    .then(response => {
+                        this.product_list = response.data;
+                    })
+                    .catch(error => {
+                        console.log(error);
+                    });
+            },
+            addToCart(item) {
+                const existingItem = this.cart.find(cartItem => cartItem.id === item.id);
+                if (existingItem) {
+                    existingItem.qty += 1;
+                } else {
+                    this.cart.push({...item, qty: 1});
+
+                }
+                this.updateTotal();
+            },
+            removeFromCart(index) {
+                this.cart.splice(index, 1);
+                this.updateTotal();
+            },
+            updateTotal() {
+                this.total = this.cart.reduce((sum, item) => sum + item.qty * item.price, 0);
+                console.log(this.total,'this.total');
+            },
+            processPayment() {
+                if (this.received_amount < this.total) {
+                    Swal.fire('Error', 'Insufficient amount!', 'error');
+                    return;
+                }
+
+                Swal.fire('Success', 'Payment processed!', 'success');
+
+                // Prepare structured data to send to the backend
+                const paymentData = {
+                    cart: this.cart.map(item => ({
+                        name: item.name,
+                        qty: item.qty,
+                        price: item.price
+                    })),
+                    total_price: this.total
+                };
+
+                // Send payment data to backend
+                axios.post('/payment', paymentData)
+                    .then(response => {
+                        console.log(response.data);
+                        this.clearCart();
+                    })
+                    .catch(error => {
+                        console.log(error);
+                        Swal.fire('Error', 'Payment failed. Please try again.', 'error');
+                    });
+            },
+            clearCart() {
+                this.cart = [];
+                this.total = 0;
+                this.received_amount = 0;
+            },
+            getCartFormatted() {
+                return this.cart.map(item => {
+                    return `[${item.name}, ${item.qty}, $${(item.qty * item.price).toLocaleString()}]`;
+                }).join(', ');
+            }
+        }
+    });
+</script>
+</body>
+</html>
